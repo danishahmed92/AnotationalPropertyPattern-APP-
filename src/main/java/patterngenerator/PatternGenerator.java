@@ -1,10 +1,7 @@
 package patterngenerator;
 
 import annotation.DependencyTree;
-import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
-import edu.stanford.nlp.ling.Label;
-import edu.stanford.nlp.ling.LabelFactory;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.util.CoreMap;
@@ -16,17 +13,7 @@ import java.util.*;
  * @author DANISH AHMED on 12/7/2018
  */
 public class PatternGenerator {
-    SemanticGraph semanticGraph;
-
-    public PatternGenerator(CoreMap sentence) {
-        semanticGraph = DependencyTree.getDependencyParse(sentence);
-    }
-
-    public PatternGenerator(SemanticGraph semanticGraph) {
-        this.semanticGraph = semanticGraph;
-    }
-
-    public SemanticGraph replaceDomainRange(SemanticGraph semanticGraph, String subj, String obj) {
+    public static SemanticGraph replaceDomainRange(SemanticGraph semanticGraph, String subj, String obj) {
         SemanticGraph sg = new SemanticGraph();
         List<SemanticGraphEdge> allEdges = semanticGraph.edgeListSorted();
         if (allEdges ==  null || allEdges.isEmpty())
@@ -62,7 +49,7 @@ public class PatternGenerator {
         return sg;
     }
 
-    public SemanticGraph pruneGraph(SemanticGraph semanticGraph, String subj, String obj) {
+    public static SemanticGraph pruneGraph(SemanticGraph semanticGraph, String subj, String obj) {
         List<IndexedWord> subjIWList = DependencyTree.getIndexedWordsFromString(semanticGraph, subj);
         List<IndexedWord> objIWList = DependencyTree.getIndexedWordsFromString(semanticGraph, obj);
         IndexedWord root = semanticGraph.getFirstRoot();
@@ -95,7 +82,7 @@ public class PatternGenerator {
 //    and when you will remove the vertices that are not connected to root, then this node will also be removed.
 //    UPDATE: I think it won't cause issue as prevEdge is set to edge after modification,
 //    so governor will always have a path.
-    public HashMap<String, Set<SemanticGraphEdge>> setEdgesRemovalAddition(SemanticGraph semanticGraph, List<IndexedWord> iWList) {
+    private static HashMap<String, Set<SemanticGraphEdge>> setEdgesRemovalAddition(SemanticGraph semanticGraph, List<IndexedWord> iWList) {
         HashMap<String, Set<SemanticGraphEdge>> edgeRemoveAddMap = new LinkedHashMap<>();
 
         Set<SemanticGraphEdge> toRemoveEdgeList = new HashSet<>();
@@ -143,5 +130,39 @@ public class PatternGenerator {
         edgeRemoveAddMap.put("remove", toRemoveEdgeList);
 
         return edgeRemoveAddMap;
+    }
+
+    public static Set<SemanticGraph> removeSubContainPatterns(Set<SemanticGraph> sgPatterns) {
+        if (sgPatterns.size() <= 1)
+            return sgPatterns;
+
+        HashMap<IndexedWord, Set<SemanticGraph>> rootGraphsMap = new LinkedHashMap<>();
+        for (SemanticGraph sg : sgPatterns) {
+            IndexedWord root = sg.getFirstRoot();
+            Set<SemanticGraph> graphs;
+            if (!rootGraphsMap.containsKey(root)) {
+                graphs = new HashSet<>();
+                graphs.add(sg);
+            } else {
+                graphs = rootGraphsMap.get(root);
+                graphs.add(sg);
+            }
+            rootGraphsMap.put(root, graphs);
+        }
+
+        Set<SemanticGraph> nonSubContainGraphs = new HashSet<>();
+        for (IndexedWord root : rootGraphsMap.keySet()) {
+            int maxEdges = -1;
+            SemanticGraph maxGraph = null;
+            for (SemanticGraph sg : rootGraphsMap.get(root)) {
+                int edges = sg.edgeCount();
+                if (edges >= maxEdges) {
+                    maxEdges = edges;
+                    maxGraph = sg;
+                }
+            }
+            nonSubContainGraphs.add(maxGraph);
+        }
+        return nonSubContainGraphs;
     }
 }

@@ -5,6 +5,7 @@ import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.util.CoreMap;
 import parser.DependencyParser;
+import patterngenerator.Pattern;
 import patterngenerator.PatternGenerator;
 
 import java.util.*;
@@ -19,8 +20,8 @@ public class Main {
         HashMap<String, String> subjObjMap = new HashMap<String, String>();
 
         subjObjMap.put("subj", "Albert Einstein");
-//        subjObjMap.put("obj", "German Empire");
-        subjObjMap.put("obj", "Kingdom of Württemberg");
+        subjObjMap.put("obj", "German Empire");
+//        subjObjMap.put("obj", "Kingdom of Württemberg");
         annotationSubjObjMap.put("Einstein-born", subjObjMap);
         subjObjMap = new HashMap<>();
 
@@ -30,7 +31,7 @@ public class Main {
         subjObjMap = new HashMap<>();
 
         subjObjMap.put("subj", "Ahmed");
-        subjObjMap.put("obj", "Ricardo");
+        subjObjMap.put("obj", "Dr. Ricardo");
         annotationSubjObjMap.put("subj2Obj1", subjObjMap);
         subjObjMap = new HashMap<>();
 
@@ -75,19 +76,20 @@ public class Main {
             annoGraphs = dp.removeDuplicatedGraphs(annoGraphs);
             Set<SemanticGraph> prunedAndDRReplacedGraphs = new HashSet<>();
             for (SemanticGraph sg : annoGraphs) {
-                PatternGenerator pg = new PatternGenerator(sg);
-                SemanticGraph prunedGraph = pg.pruneGraph(sg, subj, obj);
-                SemanticGraph domainRangeReplaced = pg.replaceDomainRange(prunedGraph, subj, obj);
+                SemanticGraph prunedGraph = PatternGenerator.pruneGraph(sg, subj, obj);
+                SemanticGraph domainRangeReplaced = PatternGenerator.replaceDomainRange(prunedGraph, subj, obj);
                 prunedAndDRReplacedGraphs.add(domainRangeReplaced);
-//                System.out.println("leaves:\t" + domainRangeReplaced.getLeafVertices());
-//                prunedGraph.prettyPrint();
-                System.out.println(prunedGraph.toRecoveredSentenceString());
-                System.out.println(prunedGraph.toCompactString(true));
+            }
+
+            Set<SemanticGraph> nonSubContainGraph = PatternGenerator.removeSubContainPatterns(prunedAndDRReplacedGraphs);
+            for (SemanticGraph sg : nonSubContainGraph) {
+                System.out.println(sg.toRecoveredSentenceString());
+                System.out.println(sg.toCompactString(true));
+
+                Pattern pattern = new Pattern(sg);
                 System.out.println();
             }
             System.out.println();
-
-
         }
     }
 }

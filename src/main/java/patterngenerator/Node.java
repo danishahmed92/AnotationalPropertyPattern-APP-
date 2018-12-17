@@ -9,6 +9,7 @@ import java.util.*;
  */
 public class Node {
     public IndexedWord indexedNode;
+    public String pos;
     public String label;
     public String lemma = null;
 
@@ -16,8 +17,9 @@ public class Node {
     public List<Integer> mergedIndexes = new ArrayList<>();
     public Set<String> mergedNodes = new HashSet<>();   // sourceLabel/POS typDep>targetLabel/POS
 
-    public Node(IndexedWord indexedNode, String label) {
+    public Node(IndexedWord indexedNode, String pos, String label) {
         this.indexedNode = indexedNode;
+        this.pos = pos;
         this.label = label;
     }
 

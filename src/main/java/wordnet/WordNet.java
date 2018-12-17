@@ -5,6 +5,7 @@ import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.IIndexWord;
 import edu.mit.jwi.item.IWord;
 import edu.mit.jwi.item.IWordID;
+import edu.mit.jwi.item.POS;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,22 +45,26 @@ public class WordNet {
 
     public String getVerbForNoun(String noun) {
         IIndexWord idxWord = dict.getIndexWord(noun, edu.mit.jwi.item.POS.NOUN);
-        IWordID wordID = idxWord.getWordIDs().get(0);
-        IWord word = dict.getWord(wordID);
-        String nounLemma = word.getLemma();
+        try {
+            IWordID wordID = idxWord.getWordIDs().get(0);
+            IWord word = dict.getWord(wordID);
+            String nounLemma = word.getLemma();
 
-        for (IWordID iWordID : word.getRelatedWords()) {
-            IWord relWord = dict.getWord(iWordID);
-            if (relWord.getPOS() == edu.mit.jwi.item.POS.VERB) {
-                String verb = relWord.toString().split("-")[4];
+            for (IWordID iWordID : word.getRelatedWords()) {
+                IWord relWord = dict.getWord(iWordID);
+                if (relWord.getPOS() == edu.mit.jwi.item.POS.VERB) {
+                    String verb = relWord.toString().split("-")[4];
 
-                IIndexWord iinWord = dict.getIndexWord(verb, edu.mit.jwi.item.POS.NOUN);
-                IWordID iwordID = iinWord.getWordIDs().get(0);
-                IWord iword = dict.getWord(iwordID);
+                    IIndexWord iinWord = dict.getIndexWord(verb, POS.VERB);
+                    IWordID iwordID = iinWord.getWordIDs().get(0);
+                    IWord iword = dict.getWord(iwordID);
 
-                return iword.getLemma();
+                    return iword.getLemma();
+                }
             }
+            return nounLemma;
+        } catch (NullPointerException ne) {
+            return noun;
         }
-        return nounLemma;
     }
 }
