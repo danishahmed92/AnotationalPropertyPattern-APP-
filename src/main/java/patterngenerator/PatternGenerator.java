@@ -91,38 +91,40 @@ public class PatternGenerator {
         IndexedWord root = semanticGraph.getFirstRoot();
         for (IndexedWord iW : iWList) {
             List<SemanticGraphEdge> rootToNodePath = semanticGraph.getShortestDirectedPathEdges(root, iW);
-            String prevRel = "";
-            SemanticGraphEdge prevEdge = null;
-            boolean isNmod = false;
-            for (SemanticGraphEdge edge : rootToNodePath) {
-                String rel = edge.getRelation().getShortName();
-                String specific = edge.getRelation().getSpecific();
-                if (specific != null && specific.length() > 0)
-                    rel = rel + ":" + specific;
+            if (rootToNodePath != null) {
+                String prevRel = "";
+                SemanticGraphEdge prevEdge = null;
+                boolean isNmod = false;
+                for (SemanticGraphEdge edge : rootToNodePath) {
+                    String rel = edge.getRelation().getShortName();
+                    String specific = edge.getRelation().getSpecific();
+                    if (specific != null && specific.length() > 0)
+                        rel = rel + ":" + specific;
 
-                if (rel.contains("nmod:of") && isNmod) {
-                    IndexedWord gov = edge.getGovernor();
-                    IndexedWord dep = edge.getDependent();
-                    if (!iWList.contains(gov) && !iWList.contains(dep))
+                    if (rel.contains("nmod:of") && isNmod) {
+                        IndexedWord gov = edge.getGovernor();
+                        IndexedWord dep = edge.getDependent();
+                        if (!iWList.contains(gov) && !iWList.contains(dep))
+                            toRemoveEdgeList.add(prevEdge);
+                        continue;
+                    }
+                    if (rel.contains("nmod:") && rel.equals(prevRel)) {
                         toRemoveEdgeList.add(prevEdge);
-                    continue;
-                }
-                if (rel.contains("nmod:") && rel.equals(prevRel)) {
-                    toRemoveEdgeList.add(prevEdge);
 
-                    SemanticGraphEdge toAddEdge = new SemanticGraphEdge(
-                            prevEdge.getGovernor(), edge.getDependent(),
-                            prevEdge.getRelation(),
-                            edge.getWeight(),
-                            edge.isExtra()
-                    );
-                    toAddEdgeList.add(toAddEdge);
-                }
+                        SemanticGraphEdge toAddEdge = new SemanticGraphEdge(
+                                prevEdge.getGovernor(), edge.getDependent(),
+                                prevEdge.getRelation(),
+                                edge.getWeight(),
+                                edge.isExtra()
+                        );
+                        toAddEdgeList.add(toAddEdge);
+                    }
 
-                if (!rel.equals("nmod:of")) {
-                    prevEdge = edge;
-                    prevRel = rel;
-                    isNmod = rel.contains("nmod:");
+                    if (!rel.equals("nmod:of")) {
+                        prevEdge = edge;
+                        prevRel = rel;
+                        isNmod = rel.contains("nmod:");
+                    }
                 }
             }
         }
@@ -138,7 +140,14 @@ public class PatternGenerator {
 
         HashMap<IndexedWord, Set<SemanticGraph>> rootGraphsMap = new LinkedHashMap<>();
         for (SemanticGraph sg : sgPatterns) {
-            IndexedWord root = sg.getFirstRoot();
+            IndexedWord root;
+            try {
+                root = sg.getFirstRoot();
+            } catch (NullPointerException npe) {
+                npe.printStackTrace();
+                continue;
+            }
+
             Set<SemanticGraph> graphs;
             if (!rootGraphsMap.containsKey(root)) {
                 graphs = new HashSet<>();

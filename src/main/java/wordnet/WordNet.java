@@ -1,5 +1,6 @@
 package wordnet;
 
+import config.IniConfig;
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.IIndexWord;
@@ -27,9 +28,7 @@ public class WordNet {
     }
 
     public WordNet() throws IOException {
-//        TODO: Load path from .ini
-        String wordNetDirectory = "data";
-        String path = wordNetDirectory + File.separator + "dict";
+        String path = IniConfig.configInstance.wordNet;
         URL url = null;
         try {
             url = new URL("file", null, path);

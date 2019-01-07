@@ -1,8 +1,12 @@
 package patterngenerator;
 
+import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.IndexedWord;
+import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
+import edu.stanford.nlp.util.CoreMap;
+import nlp.POSLemma;
 import parser.DependencyParser;
 import wordnet.WordNet;
 
@@ -28,29 +32,47 @@ public class Pattern {
     public Set<String> distinctNouns = new HashSet<>();
 
     public Pattern(SemanticGraph semanticGraph) {
-        this.semanticGraph = semanticGraph;
-        this.sgPretty = semanticGraph.toCompactString(true);
-        this.sgToSentence = semanticGraph.toRecoveredSentenceString();
+        try {
+            this.semanticGraph = semanticGraph;
+            this.sgPretty = semanticGraph.toCompactString(true);
+            this.sgToSentence = semanticGraph.toRecoveredSentenceString();
 
-        IndexedWord root = semanticGraph.getFirstRoot();
-        String rootPOS = root.tag();
-        String rootLabel = root.backingLabel().originalText();
-        String rootLemma;
-        if (rootPOS.contains("NN")) {
-            rootLemma = WordNet.wordNet.getVerbForNoun(root.backingLabel().originalText());
-        } else {
-            rootLemma = root.lemma();
+            IndexedWord root = semanticGraph.getFirstRoot();
+            String rootPOS = root.tag();
+            String rootLabel = root.backingLabel().originalText();
+            String rootLemma;
+            if (rootPOS.contains("NN")) {
+                rootLemma = WordNet.wordNet.getVerbForNoun(root.backingLabel().originalText());
+
+                Annotation newLemmaAnno = POSLemma.PLInstance.annotateDocument(rootLemma);
+                List<CoreMap> sentences = newLemmaAnno.get(CoreAnnotations.SentencesAnnotation.class);
+                rootLemma = sentences.get(0).get(CoreAnnotations.TokensAnnotation.class).get(0).lemma();
+            } else {
+                rootLemma = root.lemma();
+            }
+
+            this.root = new Node(root, rootPOS, rootLabel);
+            this.root.setLemma(rootLemma);
+
+            setSubjObjPath();
+
+            subjPatternStr = String.valueOf(setPatternStr(rootToSubjPath));
+            objPatternStr = String.valueOf(setPatternStr(rootToObjPath));
+            setMergePatternStr();
+        } catch (NullPointerException npe) {
+            npe.printStackTrace();
+
+            this.root = null;
+            this.semanticGraph = null;
+            this.rootToSubjPath = null;
+            this.rootToObjPath = null;
+            this.subjPatternStr = null;
+            this.objPatternStr = null;
+            this.mergePatternStr = null;
+            this.sgPretty = null;
+            this.sgToSentence = null;
+            this.distinctNouns = null;
         }
-
-        this.root = new Node(root, rootPOS, rootLabel);
-        this.root.setLemma(rootLemma);
-
-        setSubjObjPath();
-        subjPatternStr = String.valueOf(setPatternStr(rootToSubjPath));
-        objPatternStr = String.valueOf(setPatternStr(rootToObjPath));
-        setMergePatternStr();
-
-        System.out.println(mergePatternStr);
     }
 
     public void setMergePatternStr() {
@@ -106,28 +128,47 @@ public class Pattern {
     }
 
     public void setSubjObjPath() {
-        // the root node will always have 2 out-edges at max
-        List<SemanticGraphEdge> rootOutEdges = semanticGraph.getOutEdgesSorted(root.indexedNode);
-        IndexedWord lastSubjIW = null;
-        IndexedWord lastObjIW = null;
-        for (SemanticGraphEdge outEdge : rootOutEdges) {
-            IndexedWord dep;
-            dep = outEdge.getDependent();
+        List<SemanticGraphEdge> allEdges = semanticGraph.edgeListSorted();
+        if (allEdges ==  null || allEdges.isEmpty())
+            return;
 
-            List<SemanticGraphEdge> currentOutEdges;
-            do {
-                if (dep.originalText().equals("%D%"))
-                    lastSubjIW = dep;
-                else if (dep.originalText().equals("%R%"))
-                    lastObjIW = dep;
+        Set<IndexedWord> subjIWList = new HashSet<>();
+        Set<IndexedWord> objIWList = new HashSet<>();
+        for (SemanticGraphEdge edge : allEdges) {
+            IndexedWord gov = edge.getGovernor();
+            IndexedWord dep = edge.getDependent();
 
-                currentOutEdges = semanticGraph.getOutEdgesSorted(dep);
-                if (currentOutEdges != null && currentOutEdges.size() > 0)
-                    dep = currentOutEdges.get(0).getDependent();
-            } while (currentOutEdges != null && currentOutEdges.size() > 0);
+            if (gov.originalText().equals("%D%"))
+                subjIWList.add(gov);
+            else if (gov.originalText().equals("%R%"))
+                objIWList.add(gov);
+
+            if (dep.originalText().equals("%D%"))
+                subjIWList.add(dep);
+            else if (dep.originalText().equals("%R%"))
+                objIWList.add(dep);
         }
 
-        rootToSubjPath = semanticGraph.getShortestUndirectedPathEdges(root.indexedNode, lastSubjIW);
-        rootToObjPath = semanticGraph.getShortestUndirectedPathEdges(root.indexedNode, lastObjIW);
+        IndexedWord maxSubj = null;
+        int maxSubjDepth = -1;
+        for (IndexedWord node : subjIWList) {
+            int currentDepth = semanticGraph.getShortestUndirectedPathEdges(root.indexedNode, node).size();
+            if (currentDepth > maxSubjDepth) {
+                maxSubj = node;
+                maxSubjDepth = currentDepth;
+            }
+        }
+        rootToSubjPath = semanticGraph.getShortestUndirectedPathEdges(root.indexedNode, maxSubj);
+
+        IndexedWord maxObj = null;
+        int maxObjDepth = -1;
+        for (IndexedWord node : objIWList) {
+            int currentDepth = semanticGraph.getShortestUndirectedPathEdges(root.indexedNode, node).size();
+            if (currentDepth > maxObjDepth) {
+                maxObj = node;
+                maxObjDepth = currentDepth;
+            }
+        }
+        rootToObjPath = semanticGraph.getShortestUndirectedPathEdges(root.indexedNode, maxObj);
     }
 }

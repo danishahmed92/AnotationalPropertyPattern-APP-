@@ -1,12 +1,37 @@
 package utils;
 
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
  * @author DANISH AHMED on 12/9/2018
  */
 public class Utils {
+    public static List<String> getFilesInDirectory(String directory) {
+        List<String> filesInDirectory = new LinkedList<>();
+        Path path = Paths.get(directory);
+        if (Files.isDirectory(path)) {
+            try {
+                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) throws IOException {
+                        filesInDirectory.add(filePath.getFileName().toString());
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            filesInDirectory.add(path.getFileName().toString());
+        }
+        return filesInDirectory;
+    }
+
     public static String[] getLabelSplit(String label) {
         try {
             if (!label.contains("."))

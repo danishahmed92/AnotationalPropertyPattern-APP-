@@ -15,6 +15,20 @@
             <version>3.6.1</version>
         </dependency>
 
+        <!-- Loading configuration from .ini file -->
+        <dependency>
+            <groupId>org.ini4j</groupId>
+            <artifactId>ini4j</artifactId>
+            <version>0.5.1</version>
+        </dependency>
+
+        <!-- Database MySQL-->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.39</version>
+        </dependency>
+
     </dependencies>
 
     <build>

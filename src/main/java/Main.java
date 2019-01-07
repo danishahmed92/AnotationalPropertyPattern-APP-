@@ -1,5 +1,6 @@
 import annotation.DependencyTree;
 import annotation.DependencyTreeAnnotator;
+import config.IniConfig;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.semgraph.SemanticGraph;
@@ -7,7 +8,9 @@ import edu.stanford.nlp.util.CoreMap;
 import parser.DependencyParser;
 import patterngenerator.Pattern;
 import patterngenerator.PatternGenerator;
+import properties.PropertyAnnotations;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -15,81 +18,64 @@ import java.util.*;
  */
 public class Main {
     public static void main(String[] args) {
-        String annoPath = "data/anno/";
-        HashMap<String, HashMap<String, String>> annotationSubjObjMap = new LinkedHashMap<String, HashMap<String, String>>();
-        HashMap<String, String> subjObjMap = new HashMap<String, String>();
+        try {
+            String annotationDirectory = IniConfig.configInstance.dptAnnotation2;
+            List<String> properties = PropertyAnnotations.getAllProperties();
+            DependencyParser dp = new DependencyParser();
+            for (String property : properties) {
+                HashMap<String, HashMap<String, String>> annotationsLabelMap = PropertyAnnotations.getAnnotationLabelMap(property);
+                List<String> annotationFiles = PropertyAnnotations.getAnnotationFilesForProperty(property);
 
-        subjObjMap.put("subj", "Albert Einstein");
-        subjObjMap.put("obj", "German Empire");
-//        subjObjMap.put("obj", "Kingdom of Württemberg");
-        annotationSubjObjMap.put("Einstein-born", subjObjMap);
-        subjObjMap = new HashMap<>();
+                if (annotationFiles != null && annotationFiles.size() > 0) {
+                    for (String annotationFile : annotationFiles) {
+                        if (annotationsLabelMap.containsKey(annotationFile)) {
+                            String subjLabel = annotationsLabelMap.get(annotationFile).get("subjLabel");
+                            String objLabel = annotationsLabelMap.get(annotationFile).get("objLabel");
 
-        subjObjMap.put("subj", "Ahmed");
-        subjObjMap.put("obj", "Pakistan");
-        annotationSubjObjMap.put("subj2Obj2", subjObjMap);
-        subjObjMap = new HashMap<>();
+                            Annotation annotation = DependencyTreeAnnotator.readAnnotationFromFile(annotationDirectory + property + "/" + annotationFile);
+                            Set<SemanticGraph> distinctGraphs = new HashSet<>();
 
-        subjObjMap.put("subj", "Ahmed");
-        subjObjMap.put("obj", "Dr. Ricardo");
-        annotationSubjObjMap.put("subj2Obj1", subjObjMap);
-        subjObjMap = new HashMap<>();
+                            assert annotation != null;
+                            List<CoreMap> sentences = DependencyTree.getSentences(annotation);
+                            for (CoreMap sentence : sentences) {
+                                SemanticGraph semanticGraph = DependencyTree.getDependencyParse(sentence);
+                                List<IndexedWord> subjIWList = DependencyTree.getIndexedWordsFromString(semanticGraph, subjLabel);
+                                List<IndexedWord> objIWList = DependencyTree.getIndexedWordsFromString(semanticGraph, objLabel);
 
-        subjObjMap.put("subj", "Ahmed");
-        subjObjMap.put("obj", "Karachi");
-        annotationSubjObjMap.put("obj2Subj1", subjObjMap);
+                                for (IndexedWord subjIW : subjIWList) {
+                                    for (IndexedWord objIW : objIWList) {
+                                        SemanticGraph patternGraph = dp.getGraphBetweenNodes(semanticGraph, subjIW, objIW);
+                                        if (patternGraph != null)
+                                            distinctGraphs.add(patternGraph);
+                                    }
+                                }
+                            }
+                            System.out.println(annotationFile);
+                            /*System.out.println(distinctGraphs);
+                            System.out.println();*/
 
-        HashMap<String, Set<SemanticGraph>> annotationSGMap = new LinkedHashMap<>();
-        DependencyParser dp = new DependencyParser();
-        for (String annoFile : annotationSubjObjMap.keySet()) {
-            String path = annoPath + annoFile;
-            Annotation annotation = DependencyTreeAnnotator.readAnnotationFromFile(path);
 
-            Set<SemanticGraph> distinctGraphs = new HashSet<>();
-            String subj = annotationSubjObjMap.get(annoFile).get("subj");
-            String obj = annotationSubjObjMap.get(annoFile).get("obj");
+                            distinctGraphs = dp.removeDuplicatedGraphs(distinctGraphs);
+                            Set<SemanticGraph> prunedAndDRReplacedGraphs = new HashSet<>();
+                            for (SemanticGraph sg : distinctGraphs) {
+                                SemanticGraph prunedGraph = PatternGenerator.pruneGraph(sg, subjLabel, objLabel);
+                                SemanticGraph domainRangeReplaced = PatternGenerator.replaceDomainRange(prunedGraph, subjLabel, objLabel);
+                                prunedAndDRReplacedGraphs.add(domainRangeReplaced);
+                            }
 
-            assert annotation != null;
-            List<CoreMap> sentences = DependencyTree.getSentences(annotation);
-            for (CoreMap sentence : sentences) {
-                SemanticGraph semanticGraph = DependencyTree.getDependencyParse(sentence);
-                List<IndexedWord> subjIWList = DependencyTree.getIndexedWordsFromString(semanticGraph, subj);
-                List<IndexedWord> objIWList = DependencyTree.getIndexedWordsFromString(semanticGraph, obj);
-
-                for (IndexedWord subjIW : subjIWList) {
-                    for (IndexedWord objIW : objIWList) {
-                        SemanticGraph patternGraph = dp.getGraphBetweenNodes(semanticGraph, subjIW, objIW);
-                        if (patternGraph != null)
-                            distinctGraphs.add(patternGraph);
+                            Set<SemanticGraph> nonSubContainGraph = PatternGenerator.removeSubContainPatterns(prunedAndDRReplacedGraphs);
+                            for (SemanticGraph sg : nonSubContainGraph) {
+                                Pattern pattern = new Pattern(sg);
+                                System.out.println(pattern.sgToSentence);
+                                System.out.println(pattern.mergePatternStr);
+                                System.out.println();
+                            }
+                        }
                     }
                 }
             }
-            annotationSGMap.put(annoFile, distinctGraphs);
-        }
-
-        for (String annoFile : annotationSGMap.keySet()) {
-            Set<SemanticGraph> annoGraphs = annotationSGMap.get(annoFile);
-            System.out.println(annoFile);
-            String subj = annotationSubjObjMap.get(annoFile).get("subj");
-            String obj = annotationSubjObjMap.get(annoFile).get("obj");
-
-            annoGraphs = dp.removeDuplicatedGraphs(annoGraphs);
-            Set<SemanticGraph> prunedAndDRReplacedGraphs = new HashSet<>();
-            for (SemanticGraph sg : annoGraphs) {
-                SemanticGraph prunedGraph = PatternGenerator.pruneGraph(sg, subj, obj);
-                SemanticGraph domainRangeReplaced = PatternGenerator.replaceDomainRange(prunedGraph, subj, obj);
-                prunedAndDRReplacedGraphs.add(domainRangeReplaced);
-            }
-
-            Set<SemanticGraph> nonSubContainGraph = PatternGenerator.removeSubContainPatterns(prunedAndDRReplacedGraphs);
-            for (SemanticGraph sg : nonSubContainGraph) {
-                System.out.println(sg.toRecoveredSentenceString());
-                System.out.println(sg.toCompactString(true));
-
-                Pattern pattern = new Pattern(sg);
-                System.out.println();
-            }
-            System.out.println();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }
