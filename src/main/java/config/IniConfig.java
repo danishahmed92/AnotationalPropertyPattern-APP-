@@ -25,6 +25,14 @@ public class IniConfig {
     public String dbUser;
     public String dbPassword;
 
+    public String sparql;
+    public int numRelationsPerProperty;
+
+    public String esIp;
+    public int esPort;
+    public String esDataset;
+    public String esDSType;
+
     /**
      * reading configuration from sameAs.ini
      * and set variables that are globally required
@@ -43,5 +51,13 @@ public class IniConfig {
         database = configIni.get("mysql", "database");
         dbUser = configIni.get("mysql", "dbUser");
         dbPassword = configIni.get("mysql", "dbPassword");
+
+        sparql = configIni.get("environment", "sparql");
+        numRelationsPerProperty = Integer.parseInt(configIni.get("environment", "numRelationsPerProperty"));
+
+        esIp = configIni.get("elasticSearch", "ip");
+        esPort = Integer.parseInt(configIni.get("elasticSearch", "port"));
+        esDataset = configIni.get("elasticSearch", "indexDataset");
+        esDSType = configIni.get("elasticSearch", "indexType");
     }
 }

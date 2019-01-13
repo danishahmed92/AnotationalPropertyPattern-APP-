@@ -10,6 +10,7 @@ import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.util.CoreMap;
 import parser.DependencyParser;
 import properties.PropertyAnnotations;
+import properties.PropertyUtils;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -95,7 +96,7 @@ public class PatternStorage {
     public void storePatternsForAllPropertiesAnnotations() {
         String annotationDirectory = IniConfig.configInstance.dptAnnotation2;
         try {
-            List<String> properties = PropertyAnnotations.getAllProperties();
+            List<String> properties = PropertyUtils.getAllProperties();
             for (String property : properties) {
                 System.out.println(property);
                 HashMap<String, HashMap<String, String>> annotationsLabelMap = PropertyAnnotations.getAnnotationLabelMap(property);

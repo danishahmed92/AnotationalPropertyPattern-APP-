@@ -1,5 +1,6 @@
 package utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -71,5 +72,11 @@ public class Utils {
         }
         // contains "."
         return extractLabelParts(labelSplit, index + 1, labelPart + " " + labelSplit[index]);
+    }
+
+    public static void createFolderIfNotExist(String directoryPath) {
+        File directory = new File(directoryPath);
+        if (!directory.exists())
+            directory.mkdir();
     }
 }

@@ -9,6 +9,7 @@ import parser.DependencyParser;
 import patterngenerator.Pattern;
 import patterngenerator.PatternGenerator;
 import properties.PropertyAnnotations;
+import properties.PropertyUtils;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -20,7 +21,7 @@ public class Main {
     public static void main(String[] args) {
         try {
             String annotationDirectory = IniConfig.configInstance.dptAnnotation2;
-            List<String> properties = PropertyAnnotations.getAllProperties();
+            List<String> properties = PropertyUtils.getAllProperties();
             DependencyParser dp = new DependencyParser();
             for (String property : properties) {
                 HashMap<String, HashMap<String, String>> annotationsLabelMap = PropertyAnnotations.getAnnotationLabelMap(property);

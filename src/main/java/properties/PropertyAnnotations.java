@@ -45,18 +45,6 @@ public class PropertyAnnotations {
         return annotationLabelMap;
     }
 
-    public static List<String> getAllProperties() throws SQLException {
-        String DISTINCT_PROPERTIES = "SELECT DISTINCT `prop_uri` FROM property ORDER BY `prop_uri` ASC";
-        Statement statement = Database.databaseInstance.conn.createStatement();
-        java.sql.ResultSet rs = statement.executeQuery(DISTINCT_PROPERTIES);
-
-        List<String> properties = new LinkedList<>();
-        while (rs.next())
-            properties.add(rs.getString("prop_uri"));
-        statement.close();
-        return properties;
-    }
-
     public static List<String> getAnnotationFilesForProperty(String propertyUri) {
         String annotationFolder = IniConfig.configInstance.dptAnnotation2 + propertyUri + "/";
         if (Files.exists(Paths.get(annotationFolder))) {
