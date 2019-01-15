@@ -5,6 +5,7 @@ import config.IniConfig;
 import edu.stanford.nlp.pipeline.Annotation;
 import nlp.Coreference;
 import properties.PropertyUtils;
+import utils.Utils;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -66,6 +67,9 @@ public class MentionSentence extends DataStorage{
         try {
             List<String> properties = PropertyUtils.getAllProperties();
             for (String property : properties) {
+                Utils.createFolderIfNotExist(IniConfig.configInstance.dptAnnotation1 + property);
+                Utils.createFolderIfNotExist(IniConfig.configInstance.dptAnnotation2 + property);
+
                 HashMap<Integer, HashMap<String, String>> sentenceTripleDataMap = PropertyUtils.getSentencesForProperty(property);
                 for (Integer sentenceId : sentenceTripleDataMap.keySet()) {
                     int tripleId = Integer.parseInt(sentenceTripleDataMap.get(sentenceId).get("tripleId"));
@@ -86,9 +90,8 @@ public class MentionSentence extends DataStorage{
                             ms.insertRefinedSentenceToDB(sentenceId, tripleId, property, sent);
                         }
                     }
-//                    break;
                 }
-//                break;
+                System.out.println(property);
             }
         } catch (SQLException e) {
             e.printStackTrace();
