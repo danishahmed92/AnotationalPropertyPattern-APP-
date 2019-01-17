@@ -9,9 +9,7 @@ import utils.Utils;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author DANISH AHMED on 1/13/2019
@@ -44,13 +42,13 @@ public class MentionSentence extends DataStorage{
         return document;
     }
 
-    public List<String> getMentionedSentences(Annotation document) {
+    public List<String> getMentionedSentences(Annotation document, Set<String> corefLabelSet) {
         Coreference coreference = Coreference.CRInstance;
         List<String> corefSentences = new ArrayList<>();
         if (coreference.getClusterIdCorefChainMap(document) == null)
             return corefSentences;
         else
-            return coreference.getCoreferenceReplacedSentences(document);
+            return coreference.getCoreferenceReplacedSentences(document, corefLabelSet);
     }
 
     public List<String> filterSentencesWithSubjObj(List<String> corefSentences, String subj, String obj) {
@@ -81,7 +79,11 @@ public class MentionSentence extends DataStorage{
                     String fileName = property + "_" + tripleId + "_" + sentenceId;
 
                     Annotation document = ms.getCorefSentencesAnnotation(sentence, fileName, true);
-                    List<String> corefSentences = ms.getMentionedSentences(document);
+                    Set<String> corefLabelSet = new HashSet<>();
+                    corefLabelSet.add(subLabel);
+                    corefLabelSet.add(objLabel);
+
+                    List<String> corefSentences = ms.getMentionedSentences(document, corefLabelSet);
                     if (corefSentences.isEmpty()) {
                         ms.insertRefinedSentenceToDB(sentenceId, tripleId, property, sentence);
                     } else {

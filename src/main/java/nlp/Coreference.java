@@ -10,10 +10,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author DANISH AHMED on 1/13/2019
@@ -61,13 +58,28 @@ public class Coreference implements CoreNLP{
         return document.get(CorefCoreAnnotations.CorefChainAnnotation.class);
     }
 
-//    TODO: Additionally take subj and obj label as input, if null then use 0th Mention, else if label is inside mention -> replace mention with label
-    public List<String> getCoreferenceReplacedSentences(Annotation document) {
+    public List<String> getCoreferenceReplacedSentences(Annotation document, Set<String> corefLabelSet) {
         List<String> corefSentences = new ArrayList<>();
         Map<Integer, CorefChain> clusterIdCorefChainMap = getClusterIdCorefChainMap(document);
 
         if (clusterIdCorefChainMap == null)
             return null;
+
+        HashMap<Integer, String> clusterIdResourceMentionMap = new HashMap<>();
+        if (corefLabelSet != null && corefLabelSet.size() != 0) {
+            for (Integer corefClustId : clusterIdCorefChainMap.keySet()) {
+                CorefChain corefChain = clusterIdCorefChainMap.get(corefClustId);
+                List<CorefChain.CorefMention> mentionList = corefChain.getMentionsInTextualOrder();
+
+                for (CorefChain.CorefMention mention : mentionList) {
+                    String mentionString = mention.mentionSpan;
+                    if (corefLabelSet.contains(mentionString)) {
+                        clusterIdResourceMentionMap.put(corefClustId, mentionString);
+                        break;
+                    }
+                }
+            }
+        }
 
         int sentCount = 0;
         for (CoreMap sentence : getSentences(document)) {
@@ -89,8 +101,11 @@ public class Coreference implements CoreNLP{
                     continue;
                 }
 
-                CorefChain.CorefMention mention = corefChain.getRepresentativeMention();
-                String firstMention = corefChain.getMentionsInTextualOrder().get(0).mentionSpan;
+                String firstMention;
+                if (clusterIdResourceMentionMap.containsKey(corefClustId))
+                    firstMention = clusterIdResourceMentionMap.get(corefClustId);
+                else
+                    firstMention = corefChain.getMentionsInTextualOrder().get(0).mentionSpan;
 
                 if (token.get(CoreAnnotations.PartOfSpeechAnnotation.class).contains("PRP")) {
                     if ((i + 1) < tokens.size()) {
@@ -98,10 +113,8 @@ public class Coreference implements CoreNLP{
                         if (nextToken.get(CoreAnnotations.PartOfSpeechAnnotation.class).contains("NN")
                                 || nextToken.get(CoreAnnotations.PartOfSpeechAnnotation.class).contains("JJ"))
                             sentenceWords.add(firstMention + "'s");
-//                            sentenceWords.add(mention.mentionSpan + "'s");
                         else
                             sentenceWords.add(firstMention);
-//                            sentenceWords.add(mention.mentionSpan);
                     }
                 } else {
                     int sentenceCount = corefChain.getMentionsInTextualOrder().get(0).sentNum;
@@ -128,8 +141,11 @@ public class Coreference implements CoreNLP{
 
         Coreference coreference = Coreference.CRInstance;
         Annotation document = coreference.annotateDocument(context);
+        Set<String> corefLabelSet = new HashSet<>();
+        corefLabelSet.add("Harvard University");
+        corefLabelSet.add("Association of American Universities");
 
-        List<String> corefSentences = coreference.getCoreferenceReplacedSentences(document);
+        List<String> corefSentences = coreference.getCoreferenceReplacedSentences(document, corefLabelSet);
         System.out.println(corefSentences);
     }
 }
