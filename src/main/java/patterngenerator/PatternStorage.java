@@ -64,7 +64,7 @@ public class PatternStorage {
         int idPropTriple = Integer.parseInt(split[1]);
         int idPsRefined = Integer.parseInt(split[2]);
 
-        String dbQuery = "INSERT INTO `property_pattern` (`id_ps_refined`, `prop_uri`, `id_prop_triple`, `annotated_doc`, `orig_root`, `root_lemma`, `pattern`, `sg_pretty`, `sg_sentence`, `dist_nouns`) " +
+        String dbQuery = "INSERT INTO `property_pattern` (`id_ps_coref`, `prop_uri`, `id_prop_triple`, `annotated_doc`, `orig_root`, `root_lemma`, `pattern`, `sg_pretty`, `sg_sentence`, `dist_nouns`) " +
                 "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         PreparedStatement prepareStatement = null;

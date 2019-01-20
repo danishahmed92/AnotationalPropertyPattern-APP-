@@ -16,7 +16,7 @@ import java.util.List;
 public class PropertyAnnotations {
     public static HashMap<String, HashMap<String, String>> getAnnotationLabelMap(String propertyUri) {
         HashMap<String, HashMap<String, String>> annotationLabelMap = new LinkedHashMap<>();
-        final String QUERY_TRIPLE_LABELS_FOR_PROPERTY = "SELECT psr.id_ps_refined, pt.id_prop_triple, psr.property_uri, pt.subj_label, pt.obj_label from property_sentence_refined AS psr \n" +
+        final String QUERY_TRIPLE_LABELS_FOR_PROPERTY = "SELECT psr.id_ps_coref, pt.id_prop_triple, psr.property_uri, pt.subj_label, pt.obj_label from property_sentence_coref AS psr \n" +
                 "INNER JOIN property_triple as pt ON psr.id_prop_triple = pt.id_prop_triple \n" +
                 "WHERE psr.property_uri = '%s' \n" +
                 "ORDER BY psr.property_uri, pt.id_prop_triple;";
@@ -28,7 +28,7 @@ public class PropertyAnnotations {
             java.sql.ResultSet rs = statement.executeQuery(query);
 
             while (rs.next()) {
-                String annotationFile = String.format("%s_%s_%s", propertyUri, rs.getString("id_prop_triple"), rs.getString("id_ps_refined"));
+                String annotationFile = String.format("%s_%s_%s", propertyUri, rs.getString("id_prop_triple"), rs.getString("id_ps_coref"));
                 String subjLabel = rs.getString("subj_label");
                 String objLabel = rs.getString("obj_label");
 

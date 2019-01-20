@@ -86,4 +86,116 @@ public class PropertyUtils {
         }
         return sentenceTripleDataMap;
     }
+
+    public static HashMap<Integer, String> getRefinedSentencesForProperty(String property) {
+        HashMap<Integer, String> idSentenceMap = new LinkedHashMap<>();
+        String queryString = String.format("select id_ps_coref, sentence from property_sentence_coref \n" +
+                "WHERE property_uri = \"%s\";", property);
+
+        Statement statement = null;
+        try {
+            statement = Database.databaseInstance.conn.createStatement();
+            ResultSet rs = statement.executeQuery(queryString);
+
+            while (rs.next()) {
+                int sentenceId = rs.getInt("id_ps_coref");
+                String sentence = rs.getString("sentence");
+
+                idSentenceMap.put(sentenceId, sentence);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return idSentenceMap;
+    }
+
+    /*public static HashMap<Integer, HashMap<String, String>> getAnnotationsForProperty(String property) {
+        HashMap<Integer, HashMap<String, String>> sentenceTripleDataMap = new LinkedHashMap<>();
+        String queryString = String.format("select id_property_sentence, id_prop_triple, annotated_doc from property_sentence \n" +
+                "WHERE property_uri = \"%s\" and annotated_doc is not NULL;", property);
+
+        Statement statement = null;
+        try {
+            statement = Database.databaseInstance.conn.createStatement();
+            ResultSet rs = statement.executeQuery(queryString);
+
+            while (rs.next()) {
+                int sentenceId = rs.getInt("id_property_sentence");
+                int tripleId = rs.getInt("id_prop_triple");
+                String annotatedDoc = rs.getString("annotated_doc");
+
+                HashMap<String, String> sentenceData = new HashMap<>();
+                sentenceData.put("tripleId", String.valueOf(tripleId));
+                sentenceData.put("annotatedDoc", annotatedDoc);
+
+                sentenceTripleDataMap.put(sentenceId, sentenceData);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return sentenceTripleDataMap;
+    }*/
+
+    public static HashMap<Integer, HashMap<String, String>> getAnnotationsForProperty(String property) {
+        HashMap<Integer, HashMap<String, String>> sentenceTripleDataMap = new LinkedHashMap<>();
+        String queryString = String.format("select ps.id_property_sentence, ps.id_prop_triple, pt.subj_label, pt.obj_label, ps.sentence, ps.annotated_doc from property_sentence ps\n" +
+                "INNER JOIN property_triple pt ON pt.id_prop_triple = ps.id_prop_triple\n" +
+                "WHERE ps.property_uri = \"%s\" and ps.annotated_doc IS NOT NULL;", property);
+
+        Statement statement = null;
+        try {
+            statement = Database.databaseInstance.conn.createStatement();
+            ResultSet rs = statement.executeQuery(queryString);
+
+            while (rs.next()) {
+                int sentenceId = rs.getInt("id_property_sentence");
+                int tripleId = rs.getInt("id_prop_triple");
+                String annotatedDoc = rs.getString("annotated_doc");
+                String subLabel = rs.getString("subj_label");
+                String objLabel = rs.getString("obj_label");
+                String sentence = rs.getString("sentence");
+
+                HashMap<String, String> sentenceData = new HashMap<>();
+                sentenceData.put("tripleId", String.valueOf(tripleId));
+                sentenceData.put("annotatedDoc", annotatedDoc);
+                sentenceData.put("subLabel", subLabel);
+                sentenceData.put("objLabel", objLabel);
+                sentenceData.put("sentence", sentence);
+
+                sentenceTripleDataMap.put(sentenceId, sentenceData);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return sentenceTripleDataMap;
+    }
+
+    public static HashMap<Integer, HashMap<String, String>> getCorefSentencesForProperty(String property) {
+        HashMap<Integer, HashMap<String, String>> sentenceTripleDataMap = new LinkedHashMap<>();
+        String queryString = String.format("select id_ps_coref, id_prop_triple, sentence from property_sentence_coref \n" +
+                "WHERE property_uri = \"%s\";", property);
+
+        Statement statement = null;
+        try {
+            statement = Database.databaseInstance.conn.createStatement();
+            ResultSet rs = statement.executeQuery(queryString);
+
+            while (rs.next()) {
+                int sentenceId = rs.getInt("id_ps_coref");
+
+                int tripleId = rs.getInt("id_prop_triple");
+                String sentence = rs.getString("sentence");
+
+                HashMap<String, String> sentenceData = new HashMap<>();
+                sentenceData.put("tripleId", String.valueOf(tripleId));
+                sentenceData.put("sentence", sentence);
+
+                sentenceTripleDataMap.put(sentenceId, sentenceData);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return sentenceTripleDataMap;
+    }
+
 }

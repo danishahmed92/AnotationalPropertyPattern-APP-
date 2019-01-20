@@ -5,13 +5,13 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 import java.util.Properties;
 
-public class POSLemma implements CoreNLP {
-    private StanfordCoreNLP pipelinePOSLemma;
+public class SecondPass implements CoreNLP {
+    private StanfordCoreNLP pipelineSecondPass;
 
     @Override
     public Properties setProperties() {
         Properties props = new Properties();
-        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner");
+        props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,parse");
         return props;
     }
 
@@ -20,22 +20,22 @@ public class POSLemma implements CoreNLP {
         return new StanfordCoreNLP(props);
     }
 
-    public static POSLemma PLInstance;
+    public static SecondPass SPInstance;
     static {
-        PLInstance = new POSLemma();
+        SPInstance = new SecondPass();
     }
 
-    public POSLemma() {
-        this.pipelinePOSLemma = setPipeLine(setProperties());
+    public SecondPass() {
+        this.pipelineSecondPass = setPipeLine(setProperties());
     }
 
     public StanfordCoreNLP getPipeline() {
-        return pipelinePOSLemma;
+        return pipelineSecondPass;
     }
 
     public Annotation annotateDocument(String context) {
         Annotation document = new Annotation(context);
-        pipelinePOSLemma.annotate(document);
+        pipelineSecondPass.annotate(document);
 
         return document;
     }

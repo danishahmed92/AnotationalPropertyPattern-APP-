@@ -18,7 +18,8 @@ public class DataStorage {
             "VALUES (?, ?, ?);";
     private String updateSentenceQuery = "UPDATE `property_sentence` SET `sentence` = ? WHERE `id_property_sentence` = ?;";
     private String updateAnnotationFileQuery = "UPDATE `property_sentence` SET `annotated_doc` = ? WHERE `id_property_sentence` = ?;";
-    private String insertRefinedSentenceQuery = "INSERT INTO `property_sentence_refined` (`id_prop_sentence`, `id_prop_triple`, `property_uri`, `sentence`) " +
+    private String updateCorefAnnotationFileQuery = "UPDATE `property_sentence_coref` SET `annotated_doc` = ? WHERE `id_ps_coref` = ?;";
+    private String insertRefinedSentenceQuery = "INSERT INTO `property_sentence_coref` (`id_prop_sentence`, `id_prop_triple`, `property_uri`, `sentence`) " +
             "VALUES (?, ?, ?, ?);";
 
     protected void storePropertyTriple(QuerySolution soln, String property) {
@@ -83,6 +84,19 @@ public class DataStorage {
         PreparedStatement prepareStatement = null;
         try {
             prepareStatement = Database.databaseInstance.conn.prepareStatement(updateAnnotationFileQuery, Statement.RETURN_GENERATED_KEYS);
+            prepareStatement.setString(1, annotatedFile);
+            prepareStatement.setInt(2, sentenceId);
+
+            prepareStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void updateCorefAnnotationFile(int sentenceId, String annotatedFile) {
+        PreparedStatement prepareStatement = null;
+        try {
+            prepareStatement = Database.databaseInstance.conn.prepareStatement(updateCorefAnnotationFileQuery, Statement.RETURN_GENERATED_KEYS);
             prepareStatement.setString(1, annotatedFile);
             prepareStatement.setInt(2, sentenceId);
 
