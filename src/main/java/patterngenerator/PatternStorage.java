@@ -64,7 +64,7 @@ public class PatternStorage {
         int idPropTriple = Integer.parseInt(split[1]);
         int idPsRefined = Integer.parseInt(split[2]);
 
-        String dbQuery = "INSERT INTO `property_pattern` (`id_ps_coref`, `prop_uri`, `id_prop_triple`, `annotated_doc`, `orig_root`, `root_lemma`, `pattern`, `sg_pretty`, `sg_sentence`, `dist_nouns`) " +
+        String dbQuery = "INSERT INTO `property_pattern` (`id_ps_coref`, `prop_uri`, `id_prop_triple`, `orig_root`, `root_lemma`, `pattern`, `sg_pretty`, `sg_sentence`, `dist_nouns`) " +
                 "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         PreparedStatement prepareStatement = null;
@@ -73,15 +73,14 @@ public class PatternStorage {
             prepareStatement.setInt(1, idPsRefined);
             prepareStatement.setString(2, propertyUri);
             prepareStatement.setInt(3, idPropTriple);
-            prepareStatement.setString(4, annotationFile);
 
             try {
-                prepareStatement.setString(5, pattern.root.label);
-                prepareStatement.setString(6, (pattern.root.lemma).contains("%") ? null : pattern.root.lemma);
-                prepareStatement.setString(7, pattern.mergePatternStr);
-                prepareStatement.setString(8, pattern.sgPretty);
-                prepareStatement.setString(9, pattern.sgToSentence);
-                prepareStatement.setString(10, pattern.distinctNouns.toString());
+                prepareStatement.setString(4, pattern.root.label);
+                prepareStatement.setString(5, (pattern.root.lemma).contains("%") ? null : pattern.root.lemma);
+                prepareStatement.setString(6, pattern.mergePatternStr);
+                prepareStatement.setString(7, pattern.sgPretty);
+                prepareStatement.setString(8, pattern.sgToSentence);
+                prepareStatement.setString(9, pattern.distinctNouns.toString());
             } catch (NullPointerException npe) {
                 npe.printStackTrace();
                 return;
