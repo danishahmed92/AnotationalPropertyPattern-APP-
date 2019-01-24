@@ -24,25 +24,72 @@ public class DependencyTree {
         return annotation.get(CoreAnnotations.SentencesAnnotation.class);
     }
 
-    public static List<IndexedWord> getIndexedWordsFromString(SemanticGraph semanticGraph, String label) {
-        /*There could be multiple IndexedWords for a single split*/
+    /*public static List<IndexedWord> getIndexedWordsFromAdjacentString(SemanticGraph semanticGraph, String label) {
         List<IndexedWord> indexedWordList = new LinkedList<>();
         if (label == null || label.isEmpty())
             return indexedWordList;
 
         String[] labelSplit = Utils.getLabelSplit(label);
+        List<IndexedWord> IWForSplit = semanticGraph.getAllNodesByWordPattern(labelSplit[0]);
 
-        for (String split : labelSplit) {
-            try {
-                List<IndexedWord> IWForSplit = semanticGraph.getAllNodesByWordPattern(split);
-                if (IWForSplit != null && !IWForSplit.isEmpty()) {
-                    IndexedWord firstIW = semanticGraph.getNodeByWordPattern(split);
-                    if (!firstIW.tag().equals("IN"))
-                        indexedWordList.addAll(IWForSplit);
+        if (labelSplit.length == 1) {
+            indexedWordList.addAll(IWForSplit);
+            return indexedWordList;
+        }
+
+        for (IndexedWord iw : IWForSplit) {
+            indexedWordList.add(iw);
+            int position = iw.index();
+            for (int i = 1; i < labelSplit.length; i++) {
+                IndexedWord indexedWord = semanticGraph.getNodeByIndex(position + 1);
+                String splitWord = labelSplit[i];
+                String currentWord = indexedWord.originalText();
+
+                if (currentWord.equals(splitWord))
+                    indexedWordList.add(indexedWord);
+                else {
+                    indexedWordList.clear();
+                    break;
                 }
-            } catch (PatternSyntaxException pse) {
-                pse.getDescription();
+                position++;
             }
+            if (indexedWordList.size() == labelSplit.length)
+                break;
+        }
+        return indexedWordList;
+    }*/
+
+    public static List<IndexedWord> getIndexedWordsFromString(SemanticGraph semanticGraph, String label) {
+        List<IndexedWord> indexedWordList = new LinkedList<>();
+        if (label == null || label.isEmpty())
+            return indexedWordList;
+
+        String[] labelSplit = Utils.getLabelSplit(label);
+        List<IndexedWord> IWForSplit = semanticGraph.getAllNodesByWordPattern(labelSplit[0]);
+
+        if (labelSplit.length == 1) {
+            indexedWordList.addAll(IWForSplit);
+            return indexedWordList;
+        }
+
+        for (IndexedWord iw : IWForSplit) {
+            indexedWordList.add(iw);
+            int position = iw.index();
+            for (int i = 1; i < labelSplit.length; i++) {
+                IndexedWord indexedWord = semanticGraph.getNodeByIndex(position + 1);
+                String splitWord = labelSplit[i];
+                String currentWord = indexedWord.originalText();
+
+                if (currentWord.equals(splitWord))
+                    indexedWordList.add(indexedWord);
+                else {
+                    indexedWordList.clear();
+                    break;
+                }
+                position++;
+            }
+            if (indexedWordList.size() == labelSplit.length)
+                break;
         }
         return indexedWordList;
     }

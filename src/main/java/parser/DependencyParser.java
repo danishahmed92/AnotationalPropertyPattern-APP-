@@ -18,6 +18,9 @@ public class DependencyParser {
         add("foreign");
         add("goeswith");
 
+//        add("cop");
+//        add("case");
+
         /* Noun Dependent word modifiers*/
         add("amod");
         add("neg");
