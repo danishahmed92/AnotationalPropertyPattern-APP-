@@ -39,7 +39,8 @@ public class Pattern {
 
             IndexedWord root = semanticGraph.getFirstRoot();
             String rootPOS = root.tag();
-            String rootLabel = root.backingLabel().originalText();
+            String rootLabel = root.backingLabel().word();
+//            String rootLabel = root.backingLabel().originalText();
             String rootLemma;
             if (rootPOS.contains("NN")) {
                 rootLemma = WordNet.wordNet.getVerbForNoun(root.backingLabel().originalText());
@@ -58,6 +59,7 @@ public class Pattern {
 
             subjPatternStr = String.valueOf(setPatternStr(rootToSubjPath));
             objPatternStr = String.valueOf(setPatternStr(rootToObjPath));
+            setDistinctNouns();
             setMergePatternStr();
         } catch (NullPointerException npe) {
             npe.printStackTrace();
@@ -88,6 +90,17 @@ public class Pattern {
             distinctNouns.add(WordNet.wordNet.getVerbForNoun(iw.toString()));
     }
 
+    public void setDistinctNouns() {
+        List<IndexedWord> allNouns = semanticGraph.getAllNodesByPartOfSpeechPattern("NN");
+        for (IndexedWord iw : allNouns) {
+            if (iw.tag().equals("NN")) {
+                if (!iw.backingLabel().originalText().equals("%R%")
+                        && !iw.backingLabel().originalText().equals("%D%"))
+                distinctNouns.add(iw.backingLabel().word());
+            }
+        }
+    }
+
     public StringBuilder setPatternStr(List<SemanticGraphEdge> path) {
         final String patternFormat = "(%s)-%s>%s";
         StringBuilder pattern = new StringBuilder();
@@ -106,10 +119,10 @@ public class Pattern {
             if (specific != null && specific.length() > 0)
                 rel = rel + ":" + specific;
 
-            if (!gov.equals(root.indexedNode))
+            /*if (!gov.equals(root.indexedNode))
                 addNoun(gov);
             if (!dep.equals(root.indexedNode))
-                addNoun(dep);
+                addNoun(dep);*/
 
             if (mergeRelList.contains(rel) &&
                     ((gov.tag().equals(dep.tag()))

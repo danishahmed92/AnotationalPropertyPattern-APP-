@@ -1,15 +1,15 @@
 package nlp;
 
-import annotation.DependencyTreeAnnotator;
+import annotation.DependencyTree;
 import edu.stanford.nlp.coref.CorefCoreAnnotations;
 import edu.stanford.nlp.coref.data.CorefChain;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.util.CoreMap;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -62,8 +62,13 @@ public class Coreference implements CoreNLP{
         List<String> corefSentences = new ArrayList<>();
         Map<Integer, CorefChain> clusterIdCorefChainMap = getClusterIdCorefChainMap(document);
 
-        if (clusterIdCorefChainMap == null)
-            return null;
+        if (clusterIdCorefChainMap == null) {
+            for (CoreMap sentence : getSentences(document)) {
+                SemanticGraph sg = DependencyTree.getDependencyParse(sentence);
+                corefSentences.add(sg.toRecoveredSentenceString());
+            }
+            return corefSentences;
+        }
 
         HashMap<Integer, String> clusterIdResourceMentionMap = new HashMap<>();
         if (corefLabelSet != null && corefLabelSet.size() != 0) {
