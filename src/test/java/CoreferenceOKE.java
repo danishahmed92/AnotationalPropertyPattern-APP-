@@ -116,7 +116,7 @@ public class CoreferenceOKE {
             coreferenceOKE.storeOKECorefSentences(sentId, okeFile, corefSentences);
         }*/
 
-        String annotationStorageDirectory = IniConfig.configInstance.okeTrainDirectory;
+        String annotationStorageDirectory = IniConfig.configInstance.okeAnnotation;
 
         CoreferenceOKE coreferenceOKE = new CoreferenceOKE();
         Coreference coreference = Coreference.CRInstance;

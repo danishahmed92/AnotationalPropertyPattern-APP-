@@ -127,7 +127,7 @@ public class PatternsOKE {
 
         for (int tripleId : okeTripleDetailMap.keySet()) {
             HashMap<String, String> tripleDetailMap = okeTripleDetailMap.get(tripleId);
-            String annotationFile = IniConfig.configInstance.okeTrainDirectory + tripleDetailMap.get("annotatedDoc");
+            String annotationFile = IniConfig.configInstance.okeAnnotation + tripleDetailMap.get("annotatedDoc");
             String subject = tripleDetailMap.get("subjLabel");
             String object = tripleDetailMap.get("objLabel");
 
