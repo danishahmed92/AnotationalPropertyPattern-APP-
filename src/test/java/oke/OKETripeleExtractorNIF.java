@@ -5,6 +5,7 @@ import config.IniConfig;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.util.FileManager;
 import utils.Utils;
 
@@ -29,7 +30,7 @@ public class OKETripeleExtractorNIF {
             "prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> \n" +
             "prefix nif:   <http://persistence.uni-leipzig.org/nlp2rdf/ontologies/nif-core#> \n" +
 
-            "SELECT ?subjLabel ?pred ?objLabel ?sentence WHERE {" +
+            "SELECT ?subjLabel ?subjType ?pred ?objLabel ?objType ?sentence WHERE {" +
                 "[] nif:isString ?sentence . \n" +
                 "?triple oa:hasTarget ?target . \n" +
                 "?triple rdf:subject ?subj . \n" +
@@ -38,9 +39,11 @@ public class OKETripeleExtractorNIF {
 
                 "?subjDetail itsrdf:taIdentRef ?subj . \n" +
                 "?subjDetail nif:anchorOf ?subjLabel . \n" +
+                "?subjDetail itsrdf:taClassRef ?subjType . \n" +
 
                 "?objDetail itsrdf:taIdentRef ?obj . \n" +
                 "?objDetail nif:anchorOf ?objLabel . \n" +
+                "?objDetail itsrdf:taClassRef ?objType . \n" +
             "}";
 
     public HashMap<Integer, HashMap<String, String>> getTripleFromTurtle(String filePath) {
@@ -58,10 +61,20 @@ public class OKETripeleExtractorNIF {
                 Literal obj = soln.getLiteral("objLabel");
                 String pred = soln.getResource("pred").getURI();
 
+                String subjClass = soln.getResource("subjType").getURI();
+                String objClass = soln.getResource("objType").getURI();
+
+                subjClass = subjClass.replaceAll("http://dbpedia.org/ontology/", "");
+                subjClass = subjClass.replaceAll("http://dbpedia.org/resource/", "");
+                objClass = objClass.replaceAll("http://dbpedia.org/ontology/", "");
+                objClass = objClass.replaceAll("http://dbpedia.org/resource/", "");
+
                 HashMap<String, String> tripleMap = new HashMap<>();
 
                 tripleMap.put("subjLabel", subj.getLexicalForm());
                 tripleMap.put("objLabel", obj.getLexicalForm());
+                tripleMap.put("subjClass", subjClass);
+                tripleMap.put("objClass", objClass);
                 tripleMap.put("property", pred);
                 tripleMap.put("sentence", sentence.getLexicalForm());
 
@@ -75,11 +88,13 @@ public class OKETripeleExtractorNIF {
     public void storeOKETripleToDB(String okeFile, HashMap<String, String> tripleMap) {
         String subjLabel = tripleMap.get("subjLabel");
         String objLabel = tripleMap.get("objLabel");
+        String subjClass = tripleMap.get("subjClass");
+        String objClass = tripleMap.get("objClass");
         String property = tripleMap.get("property").replaceAll("http://dbpedia.org/ontology/", "");
         String sentence = tripleMap.get("sentence");
 
-        String dbQuery = "INSERT INTO `oke_triples` (`oke_file`, `subj_label`, `prop_uri`, `obj_label`, `sentence`)" +
-                "values (?, ?, ?, ?, ?);";
+        String dbQuery = "INSERT INTO `oke_triples` (`oke_file`, `subj_label`, `prop_uri`, `obj_label`, `sentence`, `subj_class`, `obj_class`)" +
+                "values (?, ?, ?, ?, ?, ?, ?);";
         PreparedStatement prepareStatement = null;
         try {
             prepareStatement = Database.databaseInstance.conn.prepareStatement(dbQuery, Statement.RETURN_GENERATED_KEYS);
@@ -89,6 +104,8 @@ public class OKETripeleExtractorNIF {
             prepareStatement.setString(3, property);
             prepareStatement.setString(4, objLabel);
             prepareStatement.setString(5, sentence);
+            prepareStatement.setString(6, subjClass);
+            prepareStatement.setString(7, objClass);
 
             prepareStatement.executeUpdate();
         } catch (SQLException e) {
