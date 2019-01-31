@@ -4,6 +4,7 @@ import config.IniConfig;
 import edu.stanford.nlp.pipeline.Annotation;
 import nlp.Coreference;
 
+import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,6 +18,28 @@ import java.util.Set;
  * @author DANISH AHMED on 1/26/2019
  */
 public class CoreferenceOKE {
+    public HashMap<String, String> getOKEFileSentences() {
+        String selectQuery = "SELECT oke_file, sentence from `oke_triples` group by oke_file, sentence;";
+
+        Statement statement = null;
+        HashMap<String, String> fileSentenceMap = new HashMap<>();
+        try {
+            statement = Database.databaseInstance.conn.createStatement();
+            ResultSet rs = statement.executeQuery(selectQuery);
+
+            while (rs.next()) {
+                String file = rs.getString("oke_file");
+                String sentence = rs.getString("sentence");
+
+                fileSentenceMap.put(file, sentence);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return fileSentenceMap;
+    }
+
     public HashMap<Integer, HashMap<String, String>> getOKESentences() {
         String selectQuery = "SELECT id_oke_sent, annotated_doc, sentence, entities from `oke_sentences` " +
                 "ORDER BY id_oke_sent;";
@@ -81,7 +104,7 @@ public class CoreferenceOKE {
     }
 
     public static void main(String[] args) {
-        CoreferenceOKE coreferenceOKE = new CoreferenceOKE();
+        /*CoreferenceOKE coreferenceOKE = new CoreferenceOKE();
         HashMap<Integer, HashMap<String, String>> okeSentenceDetailMap = coreferenceOKE.getOKESentences();
         for (int sentId : okeSentenceDetailMap.keySet()) {
             HashMap<String, String> detailMap = okeSentenceDetailMap.get(sentId);
@@ -91,6 +114,21 @@ public class CoreferenceOKE {
                 corefSentences.add(detailMap.get("sentence"));
             String okeFile = detailMap.get("annotatedDoc").replaceAll("anno_", "");
             coreferenceOKE.storeOKECorefSentences(sentId, okeFile, corefSentences);
+        }*/
+
+        String annotationStorageDirectory = IniConfig.configInstance.okeAnnotation;
+
+        CoreferenceOKE coreferenceOKE = new CoreferenceOKE();
+        Coreference coreference = Coreference.CRInstance;
+        HashMap<String, String> fileSentenceMap = coreferenceOKE.getOKEFileSentences();
+
+        for (String file : fileSentenceMap.keySet()) {
+            String sentence = fileSentenceMap.get(file);
+            try {
+                DependencyTreeAnnotator.createAndWriteAnnotationToFile(sentence, coreference.getPipeline(), annotationStorageDirectory + "anno_" + file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

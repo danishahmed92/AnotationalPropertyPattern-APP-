@@ -22,7 +22,7 @@ public class Coreference implements CoreNLP{
     public Properties setProperties() {
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,parse,mention,coref");
-        props.setProperty("coref.algorithm", "neural");
+//        props.setProperty("coref.algorithm", "neural");
         return props;
     }
 
