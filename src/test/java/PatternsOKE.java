@@ -22,8 +22,10 @@ import java.util.*;
 public class PatternsOKE {
     DependencyParser dp = new DependencyParser();
     public HashMap<Integer, HashMap<String, String>> getOKETriples() {
-        String selectQuery = "SELECT id_oke_triple, id_oke_sentence, oke_file, subj_label, obj_label " +
-                " FROM `oke_sentence_triples` ORDER BY id_oke_triple;";
+        String selectQuery = "SELECT id_oke_triple, oke_file, subj_label, obj_label " +
+                " FROM `oke_triples` ot " +
+                " INNER JOIN `property` p ON ot.prop_uri = p.prop_uri " +
+                " ORDER BY id_oke_triple ASC;";
         Statement statement = null;
         HashMap<Integer, HashMap<String, String>> okeTripleDetailMap = new HashMap<>();
         try {
@@ -31,15 +33,14 @@ public class PatternsOKE {
             ResultSet rs = statement.executeQuery(selectQuery);
 
             while (rs.next()) {
-                int sentenceId = rs.getInt("id_oke_triple");
+                int tripleId = rs.getInt("id_oke_triple");
 
                 HashMap<String, String> detailMap = new HashMap<>();
-                detailMap.put("sentId", String.valueOf(rs.getInt("id_oke_sentence")));
                 detailMap.put("annotatedDoc", "anno_"+ (rs.getString("oke_file")));
                 detailMap.put("subjLabel", rs.getString("subj_label"));
                 detailMap.put("objLabel", rs.getString("obj_label"));
 
-                okeTripleDetailMap.put(sentenceId, detailMap);
+                okeTripleDetailMap.put(tripleId, detailMap);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -92,23 +93,23 @@ public class PatternsOKE {
         return patternsForAnnotation;
     }
 
-    public void storeOKEPattern(int sentId, int tripleId, Pattern pattern) {
-        String dbQuery = "INSERT INTO `oke_orig_pattern` (`id_oke_sent`, `id_oke_triple`, `orig_root`, `root_lemma`, `pattern`, `sg_pretty`, `sg_sentence`, `dist_nouns`) " +
+    public void storeOKEPattern(int tripleId, Pattern pattern) {
+        String dbQuery = "INSERT INTO `oke_patterns` (`id_oke_triple`, `orig_root`, `root_lemma`, `pattern`, `sg_pretty`, `sg_sentence`, `dist_nouns`, `dist_verbs`) " +
                 "values (?, ?, ?, ?, ?, ?, ?, ?);";
 
         PreparedStatement prepareStatement = null;
         try {
             prepareStatement = Database.databaseInstance.conn.prepareStatement(dbQuery, Statement.RETURN_GENERATED_KEYS);
-            prepareStatement.setInt(1, sentId);
-            prepareStatement.setInt(2, tripleId);
+            prepareStatement.setInt(1, tripleId);
 
             try {
-                prepareStatement.setString(3, pattern.root.label);
-                prepareStatement.setString(4, (pattern.root.lemma).contains("%") ? null : pattern.root.lemma);
-                prepareStatement.setString(5, pattern.mergePatternStr);
-                prepareStatement.setString(6, pattern.sgPretty);
-                prepareStatement.setString(7, pattern.sgToSentence);
-                prepareStatement.setString(8, pattern.distinctNouns.toString());
+                prepareStatement.setString(2, pattern.root.label);
+                prepareStatement.setString(3, (pattern.root.lemma).contains("%") ? null : pattern.root.lemma);
+                prepareStatement.setString(4, pattern.mergePatternStr);
+                prepareStatement.setString(5, pattern.sgPretty);
+                prepareStatement.setString(6, pattern.sgToSentence);
+                prepareStatement.setString(7, pattern.distinctNouns.toString());
+                prepareStatement.setString(8, pattern.distinctVerbs.toString());
             } catch (NullPointerException npe) {
                 npe.printStackTrace();
                 return;
@@ -126,7 +127,7 @@ public class PatternsOKE {
 
         for (int tripleId : okeTripleDetailMap.keySet()) {
             HashMap<String, String> tripleDetailMap = okeTripleDetailMap.get(tripleId);
-            String annotationFile = IniConfig.configInstance.okeAnnotation + tripleDetailMap.get("annotatedDoc");
+            String annotationFile = IniConfig.configInstance.okeTrainDirectory + tripleDetailMap.get("annotatedDoc");
             String subject = tripleDetailMap.get("subjLabel");
             String object = tripleDetailMap.get("objLabel");
 
@@ -136,7 +137,7 @@ public class PatternsOKE {
             List<Pattern> patterns = patternsOKE.generatePatters(annotation, subject, object);
 
             for (Pattern pattern : patterns) {
-                patternsOKE.storeOKEPattern(Integer.parseInt(tripleDetailMap.get("sentId")), tripleId, pattern);
+                patternsOKE.storeOKEPattern(tripleId, pattern);
             }
         }
     }

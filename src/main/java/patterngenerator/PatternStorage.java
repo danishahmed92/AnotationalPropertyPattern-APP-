@@ -64,8 +64,8 @@ public class PatternStorage {
         int idPropTriple = Integer.parseInt(split[1]);
         int idPsRefined = Integer.parseInt(split[2]);
 
-        String dbQuery = "INSERT INTO `property_pattern` (`id_ps_coref`, `prop_uri`, `id_prop_triple`, `orig_root`, `root_lemma`, `pattern`, `sg_pretty`, `sg_sentence`, `dist_nouns`) " +
-                "values (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        String dbQuery = "INSERT INTO `property_pattern` (`id_ps_coref`, `prop_uri`, `id_prop_triple`, `orig_root`, `root_lemma`, `pattern`, `sg_pretty`, `sg_sentence`, `dist_nouns`, `dist_verbs`) " +
+                "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
         PreparedStatement prepareStatement = null;
         try {
@@ -81,6 +81,7 @@ public class PatternStorage {
                 prepareStatement.setString(7, pattern.sgPretty);
                 prepareStatement.setString(8, pattern.sgToSentence);
                 prepareStatement.setString(9, pattern.distinctNouns.toString());
+                prepareStatement.setString(10, pattern.distinctVerbs.toString());
             } catch (NullPointerException npe) {
                 npe.printStackTrace();
                 return;

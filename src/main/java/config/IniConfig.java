@@ -2,10 +2,14 @@ package config;
 
 import org.ini4j.Ini;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashSet;
 
 public class IniConfig {
     public static IniConfig configInstance;
+    public HashSet<String> stopWordsSet = new HashSet<>();
 
     static {
         try {
@@ -45,6 +49,7 @@ public class IniConfig {
         Ini configIni = new Ini(IniConfig.class.getClassLoader().getResource(CONFIG_FILE));
 
         wordNet = configIni.get("data", "wordNet");
+        String stopWords = configIni.get("data", "stopWords");
         dptAnnotation1 = configIni.get("data", "dptAnnotation1");
         dptAnnotation2 = configIni.get("data", "dptAnnotation2");
         okeAnnotation = configIni.get("data", "okeAnnotation");
@@ -63,5 +68,19 @@ public class IniConfig {
         esPort = Integer.parseInt(configIni.get("elasticSearch", "port"));
         esDataset = configIni.get("elasticSearch", "indexDataset");
         esDSType = configIni.get("elasticSearch", "indexType");
+
+        loadStopWords(stopWords);
+    }
+
+    private void loadStopWords(String stopWordsPath) {
+        try {
+            BufferedReader input = new BufferedReader(new FileReader(stopWordsPath));
+            String word;
+
+            while ((word = input.readLine()) != null)
+                stopWordsSet.add(word);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

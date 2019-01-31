@@ -1,5 +1,6 @@
 package patterngenerator;
 
+import config.IniConfig;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -30,6 +31,7 @@ public class Pattern {
     public String sgToSentence;
 
     public Set<String> distinctNouns = new HashSet<>();
+    public Set<String> distinctVerbs = new HashSet<>();
 
     public Pattern(SemanticGraph semanticGraph) {
         try {
@@ -60,6 +62,7 @@ public class Pattern {
             subjPatternStr = String.valueOf(setPatternStr(rootToSubjPath));
             objPatternStr = String.valueOf(setPatternStr(rootToObjPath));
             setDistinctNouns();
+            setDistinctVerbs();
             setMergePatternStr();
         } catch (NullPointerException npe) {
             npe.printStackTrace();
@@ -91,12 +94,29 @@ public class Pattern {
     }
 
     public void setDistinctNouns() {
-        List<IndexedWord> allNouns = semanticGraph.getAllNodesByPartOfSpeechPattern("NN");
-        for (IndexedWord iw : allNouns) {
-            if (iw.tag().equals("NN")) {
-                if (!iw.backingLabel().originalText().equals("%R%")
-                        && !iw.backingLabel().originalText().equals("%D%"))
+        Set<IndexedWord> vertexSet = semanticGraph.vertexSet();
+        for (IndexedWord iw : vertexSet) {
+            if (iw.tag().contains("NN")
+                && !iw.backingLabel().originalText().equals("%R%")
+                && !iw.backingLabel().originalText().equals("%D%")
+                && !iw.ner().toLowerCase().contains("person")
+                    // handling 's case
+                && !iw.backingLabel().word().toLowerCase().equals("s") ) {
                 distinctNouns.add(iw.backingLabel().word());
+            }
+        }
+    }
+
+    public void setDistinctVerbs() {
+        Set<IndexedWord> vertexSet = semanticGraph.vertexSet();
+        for (IndexedWord iw : vertexSet) {
+            if (iw.tag().contains("VB")
+                    && !iw.backingLabel().originalText().equals("%R%")
+                    && !iw.backingLabel().originalText().equals("%D%")
+
+//                    Should not be a stop word
+                    && !IniConfig.configInstance.stopWordsSet.contains(iw.backingLabel().word().toLowerCase())) {
+                distinctVerbs.add(iw.backingLabel().word());
             }
         }
     }
