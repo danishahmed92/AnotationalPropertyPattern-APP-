@@ -18,6 +18,7 @@ public class IniConfig {
     public String dptAnnotation1;
     public String dptAnnotation2;
     public String okeAnnotation;
+    public String okeTrainDirectory;
     public String wordNet;
 
     public String dbHost;
@@ -47,6 +48,7 @@ public class IniConfig {
         dptAnnotation1 = configIni.get("data", "dptAnnotation1");
         dptAnnotation2 = configIni.get("data", "dptAnnotation2");
         okeAnnotation = configIni.get("data", "okeAnnotation");
+        okeTrainDirectory = configIni.get("data", "okeTrainDirectory");
 
         dbHost = configIni.get("mysql", "dbHost");
         dbPort = configIni.get("mysql", "port");
