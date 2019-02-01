@@ -110,7 +110,7 @@ public class Pattern {
     public void setDistinctVerbs() {
         Set<IndexedWord> vertexSet = semanticGraph.vertexSet();
         for (IndexedWord iw : vertexSet) {
-            if (iw.tag().contains("VB")
+            if ((iw.tag().contains("VB") || iw.tag().contains("JJ"))
                     && !iw.backingLabel().originalText().equals("%R%")
                     && !iw.backingLabel().originalText().equals("%D%")
 
