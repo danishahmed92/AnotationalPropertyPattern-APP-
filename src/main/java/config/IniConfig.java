@@ -69,7 +69,7 @@ public class IniConfig {
         esDataset = configIni.get("elasticSearch", "indexDataset");
         esDSType = configIni.get("elasticSearch", "indexType");
 
-        loadStopWords(stopWords);
+//        loadStopWords(stopWords);
     }
 
     private void loadStopWords(String stopWordsPath) {
