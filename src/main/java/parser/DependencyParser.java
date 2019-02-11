@@ -175,8 +175,13 @@ public class DependencyParser {
         Set<IndexedWord> rootLessNodes = new HashSet<>();
 
         for (IndexedWord vertex : allIWFromRoot) {
-            if (vertex == root)
+//            if (vertex == root)
+//                continue;
+            if (vertex.backingLabel().word().equals(root.backingLabel().word())
+                    && vertex.tag().equals(root.tag())
+                    && vertex.index() == root.index())
                 continue;
+
             List<SemanticGraphEdge> edgesToRoot = semanticGraph.getShortestDirectedPathEdges(root, vertex);
             if (edgesToRoot == null || edgesToRoot.size() == 0)
                 rootLessNodes.add(vertex);
