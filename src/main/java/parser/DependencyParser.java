@@ -50,42 +50,75 @@ public class DependencyParser {
 
     public SemanticGraph getGraphBetweenNodes(SemanticGraph originalSG, IndexedWord source, IndexedWord target) {
         List<SemanticGraphEdge> edgePath = originalSG.getShortestUndirectedPathEdges(source, target);
-        if (edgePath ==  null || edgePath.isEmpty())
-            return null;
-
         SemanticGraph semanticGraph = new SemanticGraph();
-        for (SemanticGraphEdge edge : edgePath)
-            semanticGraph.addEdge(edge);
+        IndexedWord root;
 
-        for (SemanticGraphEdge edge : edgePath) {
-            IndexedWord gov = edge.getGovernor();
-            IndexedWord dep = edge.getDependent();
+        boolean isNull = false;
+        if (edgePath ==  null || edgePath.isEmpty())
+            isNull = true;
+        else {
+            for (SemanticGraphEdge edge : edgePath)
+                semanticGraph.addEdge(edge);
 
-            List<SemanticGraphEdge> govOutEdges = originalSG.getOutEdgesSorted(gov);
-            List<SemanticGraphEdge> depOutEdges = originalSG.getOutEdgesSorted(dep);
-            for (SemanticGraphEdge govEdge : govOutEdges) {
-                IndexedWord outNode = govEdge.getDependent();
-                if (outNode != dep
-                        && this.MERGE_TYPED_DEPENDENCIES.contains(govEdge.getRelation().getShortName())
-                        && !semanticGraph.containsEdge(govEdge.getGovernor(), outNode)) {
-                    semanticGraph.addEdge(originalSG.getEdge(govEdge.getGovernor(), outNode));
+            for (SemanticGraphEdge edge : edgePath) {
+                IndexedWord gov = edge.getGovernor();
+                IndexedWord dep = edge.getDependent();
+
+                List<SemanticGraphEdge> govOutEdges = originalSG.getOutEdgesSorted(gov);
+                List<SemanticGraphEdge> depOutEdges = originalSG.getOutEdgesSorted(dep);
+                for (SemanticGraphEdge govEdge : govOutEdges) {
+                    IndexedWord outNode = govEdge.getDependent();
+                    if (outNode != dep
+                            && this.MERGE_TYPED_DEPENDENCIES.contains(govEdge.getRelation().getShortName())
+                            && !semanticGraph.containsEdge(govEdge.getGovernor(), outNode)) {
+                        semanticGraph.addEdge(originalSG.getEdge(govEdge.getGovernor(), outNode));
+                    }
+                }
+
+                for (SemanticGraphEdge depEdges : depOutEdges) {
+                    IndexedWord outNode = depEdges.getDependent();
+                    if (this.MERGE_TYPED_DEPENDENCIES.contains(depEdges.getRelation().getShortName())
+                            && !semanticGraph.containsEdge(depEdges.getGovernor(), outNode)) {
+                        semanticGraph.addEdge(originalSG.getEdge(depEdges.getGovernor(), outNode));
+                    }
                 }
             }
+            root = getRootWord(semanticGraph);
+            if (root == null)
+                isNull = true;
+            else
+                semanticGraph.addRoot(root);
+        }
 
-            for (SemanticGraphEdge depEdges : depOutEdges) {
-                IndexedWord outNode = depEdges.getDependent();
-                if (this.MERGE_TYPED_DEPENDENCIES.contains(depEdges.getRelation().getShortName())
-                        && !semanticGraph.containsEdge(depEdges.getGovernor(), outNode)) {
-                    semanticGraph.addEdge(originalSG.getEdge(depEdges.getGovernor(), outNode));
-                }
+        if (isNull) {
+            semanticGraph = generateSemanticGraphFromRoot(originalSG, source, target);
+            if (semanticGraph == null)
+                return null;
+        }
+
+        return semanticGraph;
+    }
+
+    public SemanticGraph generateSemanticGraphFromRoot(SemanticGraph semanticGraph, IndexedWord source, IndexedWord target) {
+        Collection<IndexedWord> roots = semanticGraph.getRoots();
+        SemanticGraph sg = new SemanticGraph();
+        for (IndexedWord root : roots) {
+            List<SemanticGraphEdge> sourceEdgePath = semanticGraph.getShortestDirectedPathEdges(root, source);
+            List<SemanticGraphEdge> targetEdgePath = semanticGraph.getShortestDirectedPathEdges(root, target);
+
+            if (sourceEdgePath.size() > 0 && targetEdgePath.size() > 0) {
+                sg.addRoot(root);
+
+                for (SemanticGraphEdge sourceEdge : sourceEdgePath)
+                    sg.addEdge(sourceEdge);
+                for (SemanticGraphEdge targetEdge : targetEdgePath)
+                    sg.addEdge(targetEdge);
             }
         }
-        IndexedWord root = getRootWord(semanticGraph);
-        if (root == null)
-            return null;
 
-        semanticGraph.addRoot(root);
-        return semanticGraph;
+        if (sg.getFirstRoot() == null)
+            return null;
+        return sg;
     }
 
     public IndexedWord getRootWord(SemanticGraph semanticGraph) {
